@@ -1,0 +1,35 @@
+        * {
+          color: rgba(0,0,0,0.6);
+          font-size:8pt;
+         }
+         legend {
+            color:black;
+         }
+        .row {
+        }
+        input, textarea,select {
+            border:1px solid lightgray;
+            margin:2px;
+            border-radius:2px;
+        }
+        form label {
+            width:33%;
+            text-align:right;
+            display:inline-block;
+            word-wrap:break-word;
+            margin-right:10px;
+        }
+        form input, form  textarea, form  select
+        {
+            width:100%;
+        }
+
+        .ui.form .inline.field>label {
+            width:30%!important;
+            text-align:right;
+            display:inline-block;
+        }
+
+.ui.dimmer {
+    background-color: rgba(0,0,0,0.5);
+}

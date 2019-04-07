@@ -1,0 +1,443 @@
+<html>
+<head>
+
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css" />
+    <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
+    <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+    <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+    <script language="javascript" src="/static/helper.js"></script>
+    <script language="javascript" src="/static/leadListTable.js"></script>
+    <script language="javascript" src="/static/confirmDelete.js"></script>
+    <script language="javascript" src="/static/leadView.js"></script>
+    <script language="javascript" src="/static/modalWindow.js"></script>
+    <script language="javascript" src="/static/numericInput.js"></script>
+    <script language="javascript" src="/static/leadModel.js"></script>
+    <script language="javascript" src="/static/propertyModel.js"></script>
+    <script language="javascript" src="/static/taskModel.js"></script>
+    <script language="javascript" src="/static/taskList.js"></script>
+    <script language="javascript" src="/static/taskView.js"></script>
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css"/>
+    <link rel="stylesheet" href="/static/custom.css"/>
+</head>
+<body>
+<template id="dashboard-page-template">
+    <h1>Dashboard</h1>
+</template>
+<template id="my-app-template">
+    <div class="ui three item menu" data-bind="foreach: menuOptions">
+      <a class="item" data-bind="text:caption, click:$component.selectMenuItem"></a>
+    </div>
+    <div>
+        <!-- ko with: selectedItem -->
+            <div data-bind="if:template=='dashboardPage'">
+                <dashboard></dashboard>
+            </div>
+            <div data-bind="if:template=='taskPage'">
+                    <task-list></task-list>
+            </div>
+            <div data-bind="if:template=='leadPage'">
+                    <lead-list-table></lead-list-table>
+            </div>
+        <!-- /ko -->
+    </div>
+    <semantic-modal params="id:'confirm_deletion', title:'Confirm Deletion'">
+        Are you sure you want to delete this record?
+    </semantic-modal>
+</template>
+
+
+<template id="numeric-input-template">
+    <input type="text" data-bind="numeric, value:number" class="numeric"/>
+</template>
+
+<template id="calendar-template"></template>
+
+<template id="lead-list-table-template">
+    <button data-bind="click:addNew" class="ui primary button">Add Lead</button>
+    <div>
+        Filter: <input type="text" data-bind="value:query"/>
+    </div>
+    <table  class="ui compact celled table">
+        <thead>
+            <tr>
+                <th>Actions</th>
+                <th>Date Added</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Address</th>
+            </tr>
+        </thead>
+        <tbody data-bind="foreach:filteredLeads">
+            <tr>
+                <td>
+                    <i class="icon edit" data-bind="click:viewLead"></i>
+                    <i class="icon trash" data-bind="click:removeLead"></i>
+                </td>
+                <td><span data-bind="text:date_added"></span></td>
+                <td><span data-bind="text:seller_name"></span></td>
+                <td><span data-bind="text:seller_email"></span></td>
+                <td><span data-bind="text:seller_phone"></span></td>
+                <td><span data-bind="text:property_address"></span></td>
+            </tr>
+        </tbody>
+    </table>
+    <semantic-modal params="id:'popupLead', title:'Leads'">
+        <div data-bind="template:{name:'lead-view-template', if:selected_lead, data:selected_lead}" style="width:100%"></div>
+    </semantic-modal>
+    <semantic-modal params="id:'popupProperty', title:'Property'">
+        <div data-bind="template:{name:'property-view-template', if:selected_property, data:selected_property}" style="width:100%"></div>
+    </semantic-modal>
+</template>
+
+<template id="lead-view-template">
+    <form class="ui form">
+        <div class="inline field">
+            <h3>Lead Details</h3>
+        </div>
+        <div class="inline field" style="display:none;">
+            <label>Id</label>
+            <input type='text' data-bind='value:uuid '/>
+        </div>
+        <div class="inline field">
+            <label>Seller Name</label>
+            <input type='text' data-bind='value:seller_name '/>
+        </div>
+        <div class="inline field">
+            <label>Seller Email</label>
+            <input type='text' data-bind='value:seller_email '/>
+        </div>
+        <div class="inline field">
+            <label>Seller Phone Number</label>
+            <input type='text' data-bind='value:seller_phone '/>
+        </div>
+        <div class="inline field">
+            <label>Stage of Lead</label>
+             <select data-bind="options: availableLeadStages, value:stage_of_lead"></select>
+        </div>
+        <div class="inline field">
+            <label>Who owns the lead</label>
+            <input type='text' data-bind='value:who_owns_lead '/>
+        </div>
+        <div class="inline field">
+            <label>Property Address</label>
+            <input type='text' data-bind='value:property_address'/>
+        </div>
+        <div class="inline field">
+            <label>Correspondance Address</label>
+            <input type='text' data-bind='value:correspondance_address '/>
+        </div>
+        <div class="inline field">
+            <label>Property Link</label>
+            <input type='text' data-bind='value:property_link '/>
+        </div>
+        <div class="inline field">
+            <label>Type of Property</label>
+             <select data-bind="options: propertyTypeOptions, value:type_of_property"></select>
+        </div>
+        <div class="inline field">
+            <label>Condition of Property</label>
+             <select data-bind="options: propertyConditionOptions, value:condition_of_property"></select>
+        </div>
+        <div class="inline field">
+            <label>Notes</label>
+            <textarea data-bind='value:notes'></textarea>
+        </div>
+        <div class="inline field">
+            <label>Create Property</label>
+            <button data-bind="click:create_property" class="ui secondary button">Create The Property</button>
+            (Total Properties: <span data-bind="text:properties().length"></span>)
+        </div>
+        <div class="inline field">
+            <label>Property</label>
+            <span data-bind="visible:properties().length==0">None</span>
+            <table class="ui compact celled table" data-bind="visible:properties().length>0">
+                <thead>
+                    <tr>
+                        <th>Postcode</th>
+                        <th>View</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-bind="foreach:properties">
+                        <td><span data-bind="text:postcode"></span></td>
+                        <td><a data-bind="click:viewProperty">View</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="inline field">
+            <h3>Motivation & Urgency</h3>
+        </div>
+        <div class="inline field">
+            <label>Why are you selling the property?</label>
+            <textarea data-bind='value:why_are_you_selling'></textarea>
+        </div>
+        <div class="inline field">
+            <label>How quickly do you want to sell the property?</label>
+            <select data-bind="options: sellSpeedOptions, value:how_quickly_want_to_sell"></select>
+        </div>
+        <div class="inline field">
+            <label>What would you like to see happening?</label>
+            <textarea data-bind='value:what_you_like_to_see_happening '></textarea>
+        </div>
+
+        <div class="inline field">
+           <h3>Property Valuation Expectations</h3>
+        </div>
+        <div class="inline field">
+            <label>What price is the property listed for?</label>
+            <input type='text' data-bind='numeric, currency:property_listed_for '/>
+        </div>
+        <div class="inline field">
+            <label>Property valued to be worth?</label>
+            <input type='text' data-bind='numeric, currency:property_valued_to_be_worth'/>
+        </div>
+        <div class="inline field">
+            <label>How did you arrive at that value?</label>
+            <input type='text' data-bind='value:how_arrived_at_number '/>
+        </div>
+        <div class="inline field">
+            <label>Is the property listed with an Agent?</label>
+            <select data-bind="options: listedWithAgentOptions, value:listed_with_agent"></select>
+        </div>
+        <div class="inline field">
+            <h3>Basic Financials</h3>
+        </div>
+        <div class="inline field">
+            <label>Is the property owned free & clear, or do they have a mortgage</label>
+            <select data-bind="options: mortgagedStates, value:mortgaged_state"></select>
+        </div>
+        <div class="inline field">
+            <label>Outstanding Mortgage Amount</label>
+            <input type='text' data-bind='numeric, currency:outstanding_mortgage_amount '/>
+        </div>
+        <div class="inline field">
+            <label>Other secured debt?</label>
+            <input type='text' data-bind='numeric, currency:other_secured_debt'/>
+        </div>
+        <div class="inline field">
+            <label>Expectation of equity release after the sale? How much?</label>
+            <input type='text' data-bind='numeric, value:expectations_of_equity_release_after_sale '/>
+        </div>
+    </form>
+</template>
+
+<template id="task-view-template">
+    <form class="ui form">
+        <div class="inline field" style="display:none;">
+            <label>UUID</label>
+            <input type="text" data-bind="value:uuid"/>
+        </div>
+        <div class="inline field">
+            <label>Title</label>
+            <input type="text" data-bind="value:title"/>
+        </div>
+        <div class="inline field">
+            <label>Description</label>
+            <input type="text" data-bind="value:description"/>
+        </div>
+        <div class="inline field">
+            <label>Due Date</label>
+            <input type="text" data-bind="value:dueDate"/>
+        </div>
+    </form>
+</template>
+
+
+<template id="modal-template">
+    <div class="ui dimmer modals page" data-bind="css:{'visible active':show()}">
+        <div class="ui small modal" data-bind="attr:{id:id}, css:{'visible active':show()}">
+          <i class="close icon" data-bind="click:closeModal"></i>
+          <div class="header" data-bind="text:title"></div>
+          <div class="image content">
+                <div data-bind="template: { nodes: $componentTemplateNodes }"></div>
+           </div>
+          <div class="actions">
+              <button data-bind="click:$component.onSaveClick, visible:mode()=='edit'" class="ui button primary">Save</button>
+              <button data-bind="click:$component.onInsertClick, visible:mode()=='insert'" class="ui button primary">Add</button>
+              <button data-bind="click:$component.onDeleteClick, visible:mode()=='edit'" class="ui button primary">Delete</button>
+          </div>
+        </div>
+    </div>
+</template>
+<template id="task-list-template">
+            <button data-bind="click:addTask" class="ui button primary">Add Task</button>
+            <div>
+                Filter: <input type="text" data-bind="value:query"/>
+            </div>
+            <table class="ui celled compact table">
+                <thead>
+                    <th>Action</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                </thead>
+                <tbody  data-bind="foreach: filterTasks">
+                    <tr>
+                        <td>
+                            <i class="ui icon edit" data-bind="click:$parent.selectTask"></i>
+                            <i class="ui icon trash" data-bind="click:$parent.deleteTask"></i>
+                        </td>
+                        <td><span data-bind="text:title"></span></td>
+                        <td><span data-bind="text:description"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+    <semantic-modal params="id:'popupTask2', title:'my title'">
+            <div data-bind="template:{name:'task-view-template', if:$parent.selected_task, data:$parent.selected_task}"  style="width:100%"></div>
+    </semantic-modal>
+</template>
+
+<template id="property-view-template">
+    <form class="ui form">
+        <div class="inline field">
+            <label>Address Line 1</label>
+            <input type="text" data-bind="value:address_line1"/>
+        </div>
+        <div class="inline field">
+            <label>Address Line 2</label>
+            <input type="text" data-bind="value:address_line2"/>
+        </div>
+        <div class="inline field">
+            <label>City</label>
+            <input type="text" data-bind="value:city"/>
+        </div>
+        <div class="inline field">
+            <label>Postcode</label>
+            <input type="text" data-bind="value:postcode"/>
+        </div>
+        <div class="inline field">
+            <label>Property Condition</label>
+            <input type="text" data-bind="value:property_condition"/>
+        </div>
+        <div class="inline field">
+            <label>Offer Type</label>
+             <select data-bind="options: offerTypes, value:offer_type"></select>
+        </div>
+    </form>
+</template>
+
+<template id="semantic-modal-template">
+        <div class="ui small modal" data-bind="attr:{id:id}">
+          <div class="header" data-bind="text:title"></div>
+          <div class="image content">
+                <div data-bind="template: { nodes: $componentTemplateNodes }"></div>
+           </div>
+          <div class="actions">
+          </div>
+        </div>
+</template>
+
+
+<div id="frm">
+
+    <myapp></myapp>
+<!--
+    <modal-window params="visible:true, title:'Lead Details', showOnMessage:'openLeadView'">
+        this is my window
+    </modal-window>
+-->
+
+
+</div>
+
+<script language="javascript">
+
+ko.postbox = new ko.subscribable();
+
+function sendMessage(token, value){
+  ko.postbox.notifySubscribers(value, token);
+}
+
+ko.bindingHandlers.modal = {
+    init: function(element, valueAccessor, allBindings) {
+        // First get the latest data that we're bound to
+        var value = valueAccessor();
+
+        // Next, whether or not the supplied model property is observable, get its current value
+        var valueUnwrapped = ko.unwrap(value);
+
+        console.log(valueUnwrapped);
+            $(element).modal()
+    },
+    update: function(element, valueAccessor, allBindings) {
+    }
+};
+ko.components.register('semantic-modal', {
+    template: { element: 'semantic-modal-template' },
+    viewModel: function(params) {
+        var self = this;
+        self.id = ko.observable(params.id);
+        self.title = ko.observable(params.title);
+        self.buttons =ko.observableArray(params.buttons);
+        self.visible = ko.observable(params.visible);
+
+        self.openWindow=function(){
+            $("#"+self.id()).modal("show");
+        }
+
+        self.cancelModal = function(){
+            $("#"+self.id()).modal("hide");
+        }
+    }
+});
+
+
+    var ViewModel = function(){
+        var self = this;
+
+        self.selected_lead = ko.observable();
+
+        ko.postbox.subscribe(function(newValue) {
+           this.selected_lead(newValue);
+           }, this, "openLead");
+    }
+
+ko.components.register('myapp', {
+    template: { element: 'my-app-template' },
+    viewModel: function(params) {
+        var self = this;
+        self.menuOptions = ko.observableArray([
+            {"caption":"Dashboard", template:"dashboardPage", active:false},
+            {"caption":"Tasks", template:"taskPage", active:true},
+            {"caption":"Leads", template:"leadPage", active:false}
+        ]);
+        self.selectedItem = ko.observable();
+
+        self.selectMenuItem = function(itm)
+        {
+            self.selectedItem(itm);
+        }
+
+    }
+})
+
+ko.components.register('dashboard-page', {
+    template: { element: 'dashboard-page-template' },
+    viewModel: function(params) {
+        var self = this;
+
+    }
+})
+ko.components.register('tasks-page', {
+    template: { element: 'task-page-template' },
+    viewModel: function(params) {
+        var self = this;
+
+    }
+})
+ko.components.register('leads-page', {
+    template: { element: 'leads-page-template' },
+    viewModel: function(params) {
+        var self = this;
+
+    }
+})
+
+    var obj = new ViewModel();
+    ko.applyBindings(obj, document.getElementById("frm"));
+</script>
+</body>
+</html>
